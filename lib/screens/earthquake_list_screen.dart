@@ -20,6 +20,7 @@ class _EarthquakeListScreenState extends State<EarthquakeListScreen> {
   bool _isLoading = true;
   String _selectedSeverity = 'All';
   bool _groupByDay = true; // Toggle for grouping by day
+  bool _philippinesOnly = false; // Toggle for Philippines-only filter
   Set<String> _expandedIds = {};
 
   final List<String> _severityOptions = [
@@ -49,7 +50,9 @@ class _EarthquakeListScreenState extends State<EarthquakeListScreen> {
     });
 
     try {
-      final earthquakes = await _earthquakeService.getAllEarthquakes();
+      final earthquakes = await _earthquakeService.getAllEarthquakes(
+        philippinesOnly: _philippinesOnly,
+      );
       setState(() {
         _allEarthquakes = earthquakes;
         _filteredEarthquakes = earthquakes;
@@ -203,6 +206,26 @@ class _EarthquakeListScreenState extends State<EarthquakeListScreen> {
                   }).toList(),
                   onChanged: _onSeverityChanged,
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Text(
+                'Philippines Only:',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const Spacer(),
+              Switch(
+                value: _philippinesOnly,
+                onChanged: (value) {
+                  setState(() {
+                    _philippinesOnly = value;
+                  });
+                  _loadEarthquakes();
+                },
+                activeColor: AppTheme.accentDark,
               ),
             ],
           ),

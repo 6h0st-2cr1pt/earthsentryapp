@@ -43,7 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
         location.name ?? 'Current Location',
       );
 
-      final earthquakes = await _earthquakeService.getAllEarthquakes();
+      // Get all earthquakes for home screen summary
+      final earthquakes = await _earthquakeService.getAllEarthquakes(philippinesOnly: false);
       final recent = earthquakes.take(5).toList();
 
       setState(() {

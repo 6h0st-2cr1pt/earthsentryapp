@@ -10,7 +10,8 @@ class EarthquakeService {
       'https://earthquake.usgs.gov/fdsnws/event/1/query';
   static const String phivolcsUrl = 'https://earthquake.phivolcs.dost.gov.ph/';
 
-  Future<List<EarthquakeModel>> getUSGSEarthquakes() async {
+  /// Get all USGS earthquakes without filtering
+  Future<List<EarthquakeModel>> getAllUSGSEarthquakes() async {
     try {
       final response = await http.get(Uri.parse(usgsUrl));
 
@@ -18,20 +19,33 @@ class EarthquakeService {
         final jsonData = json.decode(response.body);
         final features = jsonData['features'] as List? ?? [];
 
-        // Filter for Philippines region (approximately)
-        final philippinesEarthquakes = features
+        return features
             .map((feature) => EarthquakeModel.fromUSGSJson(feature))
-            .where((eq) =>
-                eq.latitude >= 4.0 &&
-                eq.latitude <= 21.0 &&
-                eq.longitude >= 116.0 &&
-                eq.longitude <= 127.0)
             .toList();
-
-        return philippinesEarthquakes;
       } else {
         throw Exception('Failed to load USGS earthquake data');
       }
+    } catch (e) {
+      throw Exception('Error fetching USGS earthquakes: $e');
+    }
+  }
+
+  /// Get USGS earthquakes filtered for Philippines region
+  Future<List<EarthquakeModel>> getUSGSEarthquakes({bool philippinesOnly = true}) async {
+    try {
+      final allEarthquakes = await getAllUSGSEarthquakes();
+      
+      if (!philippinesOnly) {
+        return allEarthquakes;
+      }
+
+      // Filter for Philippines region (approximately)
+      // Expanded bounds to include nearby regions
+      return allEarthquakes.where((eq) =>
+          eq.latitude >= 4.0 &&
+          eq.latitude <= 21.0 &&
+          eq.longitude >= 116.0 &&
+          eq.longitude <= 127.0).toList();
     } catch (e) {
       throw Exception('Error fetching USGS earthquakes: $e');
     }
@@ -121,9 +135,10 @@ class EarthquakeService {
     }
   }
 
-  Future<List<EarthquakeModel>> getAllEarthquakes() async {
+  /// Get all earthquakes (optionally filtered for Philippines)
+  Future<List<EarthquakeModel>> getAllEarthquakes({bool philippinesOnly = true}) async {
     try {
-      final usgsEarthquakes = await getUSGSEarthquakes();
+      final usgsEarthquakes = await getUSGSEarthquakes(philippinesOnly: philippinesOnly);
       final phivolcsEarthquakes = await getPHIVOLCSEarthquakes();
 
       // Combine and remove duplicates
@@ -147,9 +162,12 @@ class EarthquakeService {
   }
 
   /// Get earthquakes for a specific date
-  Future<List<EarthquakeModel>> getEarthquakesByDate(DateTime date) async {
+  Future<List<EarthquakeModel>> getEarthquakesByDate(
+    DateTime date, {
+    bool philippinesOnly = true,
+  }) async {
     try {
-      final allEarthquakes = await getAllEarthquakes();
+      final allEarthquakes = await getAllEarthquakes(philippinesOnly: philippinesOnly);
       
       // Filter earthquakes for the specified date
       final startOfDay = DateTime(date.year, date.month, date.day);
@@ -196,10 +214,11 @@ class EarthquakeService {
 
   /// Get earthquakes for the last N days
   Future<Map<DateTime, List<EarthquakeModel>>> getEarthquakesForLastDays(
-    int days,
-  ) async {
+    int days, {
+    bool philippinesOnly = true,
+  }) async {
     try {
-      final allEarthquakes = await getAllEarthquakes();
+      final allEarthquakes = await getAllEarthquakes(philippinesOnly: philippinesOnly);
       final cutoffDate = DateTime.now().subtract(Duration(days: days));
       
       // Filter earthquakes from the last N days

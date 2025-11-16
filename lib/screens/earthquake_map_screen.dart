@@ -47,16 +47,11 @@ class _EarthquakeMapScreenState extends State<EarthquakeMapScreen> {
     });
 
     try {
-      final earthquakes = await _earthquakeService.getAllEarthquakes();
-      // Filter for Philippines only
-      final phEarthquakes = earthquakes.where((eq) =>
-          eq.latitude >= phMinLat &&
-          eq.latitude <= phMaxLat &&
-          eq.longitude >= phMinLon &&
-          eq.longitude <= phMaxLon).toList();
+      // Get earthquakes filtered for Philippines region for the map
+      final earthquakes = await _earthquakeService.getAllEarthquakes(philippinesOnly: true);
 
       setState(() {
-        _earthquakes = phEarthquakes;
+        _earthquakes = earthquakes;
         _isLoading = false;
       });
     } catch (e) {
